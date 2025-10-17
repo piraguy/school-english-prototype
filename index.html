@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>School English Prototype</title>
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <style>
+    body{font-family:Arial,Helvetica,sans-serif;max-width:900px;margin:24px auto;padding:12px}
+    button{margin:6px}
+    #transcript{background:#f7f7f7;padding:12px;border-radius:6px;min-height:60px}
+    .log{margin-top:8px;padding:8px;background:#eef;border-radius:6px}
+  </style>
+</head>
+<body>
+  <h1>Agente Tutor — Protótipo</h1>
+  <p><strong>Instruções:</strong> clique Start Session, permita o microfone, depois clique Ask Question para o agente falar e aguarde a sua resposta por voz.</p>
+
+  <div>
+    <button id="startBtn">Start Session</button>
+    <button id="askBtn" disabled>Ask Question</button>
+    <button id="endBtn" disabled>End Session</button>
+    <button id="downloadBtn" disabled>Download Report</button>
+  </div>
+
+  <h3>Transcrição</h3>
+  <div id="transcript">—</div>
+
+  <h3>Feedback</h3>
+  <div id="feedback" class="log">—</div>
+
+  <script src="script.js"></script>
+</body>
+</html>
