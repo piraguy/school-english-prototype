@@ -1,9 +1,7 @@
-// Protótipo cliente: usa Web Speech API para ASR e TTS e lógica baseada em templates
 let recognition, synth = window.speechSynthesis;
 let session = {started:false, turn:0, logs:[]};
 let unit = null;
 
-// Carrega conteúdo da unidade local (arquivo content/unit.json)
 async function loadUnit(){
   try{
     const res = await fetch('content/unit.json');
@@ -20,7 +18,7 @@ async function loadUnit(){
 function speak(text){
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'en-US';
-  u.rate = 0.8; // velocidade mais lenta para alunos
+  u.rate = 0.8;
   synth.cancel();
   synth.speak(u);
 }
@@ -32,9 +30,14 @@ function initRecognition(){
   recognition.interimResults = false;
   recognition.maxAlternatives = 1;
   recognition.onresult = e => {
-    const txt = e.results[0][0].transcript;
-    document.getElementById('transcript').innerText = txt;
-    handleAnswer(txt);
+    const txt = e.results[0][0].transcript.trim();
+    document.getElementById('transcript').innerText = txt || '—';
+    if(txt){
+      handleAnswer(txt);
+    } else {
+      document.getElementById('feedback').innerText = 'I didn’t hear you. Let’s try again.';
+      speak('I didn’t hear you. Let’s try again.');
+    }
   };
   recognition.onerror = e => {
     console.error('ASR error', e);
@@ -78,7 +81,6 @@ function askQuestion(){
   session.logs.push({type:'question', text:q, turn});
   speak(q);
 
-  // aguarda 1 segundo antes de iniciar reconhecimento para evitar conflito
   setTimeout(() => {
     try {
       recognition.start();
@@ -86,12 +88,13 @@ function askQuestion(){
       console.error('Erro ao iniciar reconhecimento:', err);
       document.getElementById('feedback').innerText = 'Erro ao iniciar microfone. Tente novamente.';
     }
-  }, 1000);
+  }, 1500); // pequeno atraso para garantir que a fala terminou
 }
 function simpleSimilarity(a,b){
   a = a.toLowerCase().replace(/[^a-z\s]/g,'').trim();
   b = b.toLowerCase().replace(/[^a-z\s]/g,'').trim();
   if(!a || !b) return 0;
+  if(a === b) return 1;
   const aWords = a.split(/\s+/);
   const bWords = b.split(/\s+/);
   let matches = 0;
