@@ -20,6 +20,7 @@ async function loadUnit(){
 function speak(text){
   const u = new SpeechSynthesisUtterance(text);
   u.lang = 'en-US';
+  u.rate = 0.8; // velocidade mais lenta para alunos
   synth.cancel();
   synth.speak(u);
 }
@@ -37,7 +38,7 @@ function initRecognition(){
   };
   recognition.onerror = e => {
     console.error('ASR error', e);
-    document.getElementById('feedback').innerText = 'Erro no reconhecimento de voz: ' + e.error;
+    document.getElementById('feedback').innerText = 'Erro ao ouvir sua resposta. Clique Ask Question e tente novamente.';
   };
 }
 function startSession(){
@@ -47,7 +48,7 @@ function startSession(){
   document.getElementById('askBtn').disabled = false;
   document.getElementById('endBtn').disabled = false;
   document.getElementById('downloadBtn').disabled = true;
-  document.getElementById('feedback').innerText = 'Sessão iniciada. Clique Ask Question.';
+  document.getElementById('feedback').innerText = 'Sessão iniciada. Clique Ask Question para começar.';
 }
 function endSession(){
   session.started = false;
@@ -58,7 +59,12 @@ function endSession(){
 }
 function askQuestion(){
   if(!session.started) return;
-  // evita repetir a pergunta inicial mais de uma vez
+
+  if(!recognition){
+    document.getElementById('feedback').innerText = 'Reconhecimento de voz não disponível. Use Chrome ou Edge.';
+    return;
+  }
+
   const turn = session.turn;
   let q = '';
   if(turn === 0){
@@ -68,14 +74,19 @@ function askQuestion(){
   } else {
     q = unit.target_phrases[(turn - unit.vocabulary.length) % unit.target_phrases.length] || 'Tell me about your school.';
   }
-  // registra e fala
+
   session.logs.push({type:'question', text:q, turn});
   speak(q);
-  // ativa reconhecimento
-  if(recognition) recognition.start();
-  else {
-    document.getElementById('feedback').innerText = 'Seu navegador não suporta reconhecimento por voz (use Chrome ou Edge).';
-  }
+
+  // aguarda 1 segundo antes de iniciar reconhecimento para evitar conflito
+  setTimeout(() => {
+    try {
+      recognition.start();
+    } catch (err) {
+      console.error('Erro ao iniciar reconhecimento:', err);
+      document.getElementById('feedback').innerText = 'Erro ao iniciar microfone. Tente novamente.';
+    }
+  }, 1000);
 }
 function simpleSimilarity(a,b){
   a = a.toLowerCase().replace(/[^a-z\s]/g,'').trim();
@@ -102,7 +113,6 @@ function handleAnswer(text){
   document.getElementById('feedback').innerText = fb;
   speak(fb);
   session.turn++;
-  // proteção anti-loop: se houver 5 turns sem progresso, encerra ou pede intervenção
   if(session.turn > 20){
     document.getElementById('feedback').innerText = 'Sessão longa. Chame o tutor humano se necessário.';
     endSession();
@@ -119,7 +129,6 @@ function downloadReport(){
   URL.revokeObjectURL(url);
 }
 
-// Inicialização
 document.getElementById('startBtn').addEventListener('click', startSession);
 document.getElementById('askBtn').addEventListener('click', askQuestion);
 document.getElementById('endBtn').addEventListener('click', endSession);
