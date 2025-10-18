@@ -1,0 +1,43 @@
+{
+  "start": {
+    "message": "Hi! I’m Mia, I’m 10 years old. What’s your name?",
+    "next": "askAge"
+  },
+  "askAge": {
+    "message": "Nice to meet you, {{name}}! How old are you?",
+    "next": "warmUp"
+  },
+  "warmUp": {
+    "message": "Cool! Let’s warm up. What do you usually wear on weekends?",
+    "next": "quiz1"
+  },
+  "quiz1": {
+    "message": "Let’s play a quick quiz! Complete: 'She ______ blue eyes.'",
+    "expectedAnswer": "has",
+    "correctFeedback": "Yes! You got it!",
+    "next": "quiz2"
+  },
+  "quiz2": {
+    "message": "Now complete: 'I always ______ sneakers.'",
+    "expectedAnswer": "wear",
+    "correctFeedback": "Boom! You’re on fire!",
+    "next": "conversation"
+  },
+  "conversation": {
+    "message": "Let’s talk! What does your best friend look like?",
+    "next": "adaptTopic"
+  },
+  "adaptTopic": {
+    "onUserChangeTopic": {
+      "message": "Sure! Let’s talk about {{topic}}. What do you usually wear when you do that?",
+      "next": "keepGrammar"
+    }
+  },
+  "keepGrammar": {
+    "message": "Nice! And is it more comfortable than your school clothes?",
+    "next": "wrapUp"
+  },
+  "wrapUp": {
+    "message": "You did amazing today! Next time we can talk about food or places. Deal?"
+  }
+}
