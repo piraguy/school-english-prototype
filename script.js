@@ -1,5 +1,5 @@
 let recognition, synth = window.speechSynthesis;
-let session = {started:false, turn:0, logs:[]};
+let session = {started:false, turn:0, logs:[], lastQuestion:''};
 let unit = null;
 
 async function loadUnit(){
@@ -78,6 +78,7 @@ function askQuestion(){
     q = unit.target_phrases[(turn - unit.vocabulary.length) % unit.target_phrases.length] || 'Tell me about your school.';
   }
 
+  session.lastQuestion = q;
   session.logs.push({type:'question', text:q, turn});
   speak(q);
 
@@ -88,34 +89,66 @@ function askQuestion(){
       console.error('Erro ao iniciar reconhecimento:', err);
       document.getElementById('feedback').innerText = 'Erro ao iniciar microfone. Tente novamente.';
     }
-  }, 1500); // pequeno atraso para garantir que a fala terminou
-}
-function simpleSimilarity(a,b){
-  a = a.toLowerCase().replace(/[^a-z\s]/g,'').trim();
-  b = b.toLowerCase().replace(/[^a-z\s]/g,'').trim();
-  if(!a || !b) return 0;
-  if(a === b) return 1;
-  const aWords = a.split(/\s+/);
-  const bWords = b.split(/\s+/);
-  let matches = 0;
-  aWords.forEach(w => { if(bWords.includes(w)) matches++; });
-  return matches / Math.max(aWords.length, bWords.length);
+  }, 1500);
 }
 function handleAnswer(text){
   const turn = session.turn;
-  let expected = '';
-  if(turn === 0) expected = unit.target_phrases[0] || 'What is your name?';
-  else if(turn <= unit.vocabulary.length) expected = unit.vocabulary[(turn-1) % unit.vocabulary.length];
-  else expected = unit.target_phrases[(turn - unit.vocabulary.length) % unit.target_phrases.length] || '';
-  const score = simpleSimilarity(expected, text);
+  const question = session.lastQuestion || '';
   let fb = '';
-  if(score >= 0.7) fb = 'Great! That was clear. Try the next one.';
-  else if(score >= 0.4) fb = 'Good effort, try again and speak a bit more clearly.';
-  else fb = 'Let\'s repeat slowly together. Listen and repeat.';
-  session.logs.push({type:'answer', text, expected, score, turn});
+  let nextStep = '';
+
+  // Resposta à pergunta "What is your name?"
+  if(question.includes('your name')){
+    if(text.toLowerCase().includes('my name is') || text.toLowerCase().includes("i'm")){
+      fb = 'Nice to meet you! Let’s continue.';
+      nextStep = 'What do you like to do at school?';
+    } else {
+      fb = 'Try saying: My name is…';
+    }
+  }
+  // Resposta à pergunta "How old are you?"
+  else if(question.includes('old are you')){
+    if(text.match(/\d+/)){
+      fb = 'Great! Thanks for sharing.';
+      nextStep = 'Can you tell me your favorite subject?';
+    } else {
+      fb = 'Try saying: I am 10 years old.';
+    }
+  }
+  // Resposta a vocabulário
+  else if(question.includes('Say this word')){
+    const expected = question.split(':')[1].trim().toLowerCase();
+    if(text.toLowerCase().includes(expected)){
+      fb = 'Perfect pronunciation!';
+    } else {
+      fb = 'Let’s try again. Say: ' + expected;
+    }
+  }
+  // Resposta a frases da unidade
+  else {
+    fb = 'Thanks! Let’s keep going.';
+  }
+
+  session.logs.push({type:'answer', text, question, feedback:fb, turn});
   document.getElementById('feedback').innerText = fb;
   speak(fb);
   session.turn++;
+
+  if(nextStep){
+    setTimeout(() => {
+      session.lastQuestion = nextStep;
+      session.logs.push({type:'question', text:nextStep, turn:session.turn});
+      speak(nextStep);
+      setTimeout(() => {
+        try {
+          recognition.start();
+        } catch (err) {
+          console.error('Erro ao iniciar reconhecimento:', err);
+        }
+      }, 1500);
+    }, 3000);
+  }
+
   if(session.turn > 20){
     document.getElementById('feedback').innerText = 'Sessão longa. Chame o tutor humano se necessário.';
     endSession();
